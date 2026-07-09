@@ -35,7 +35,7 @@ if Fiber.respond_to?(:scheduler) # Ruby 3+
         end
 
         def self.sleep(context, duration:)
-          `sleep #{duration}`
+          Kernel.sleep(duration)
           duration
         end
 
@@ -83,7 +83,7 @@ if Fiber.respond_to?(:scheduler) # Ruby 3+
         end
 
         def self.sleep(context, duration:)
-          `sleep #{duration}`
+          Kernel.sleep(duration)
           duration
         end
 
@@ -194,9 +194,12 @@ if Fiber.respond_to?(:scheduler) # Ruby 3+
               }
             }
             GRAPHQL
+            query = GraphQL::Query.new(NonblockingSchema, query_str)
+            assert query.valid?
+
             started_at = Time.now
             res = with_scheduler {
-              NonblockingSchema.execute(query_str)
+              query.result
             }
             ended_at = Time.now
 
