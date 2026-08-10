@@ -14,6 +14,9 @@ module GraphQL
         @max_tokens = max_tokens || Float::INFINITY
         @tokens_count = 0
         @finished = false
+        @line_number = 1
+        @column_number = 1
+        @tracked_pos = 0
       end
 
       def finished?
@@ -28,9 +31,12 @@ module GraphQL
       attr_reader :pos, :tokens_count
 
       def advance
+        update_position(@scanner.pos)
         loop do
           @scanner.skip(IGNORE_REGEXP)
+          update_position(@scanner.pos)
           if @scanner.skip(COMMENT_REGEXP)
+            update_position(@scanner.pos)
             @tokens_count += 1
             next
           end
@@ -175,11 +181,24 @@ module GraphQL
       end
 
       def line_number
-        @scanner.string[0..@pos].count("\n") + 1
+        @line_number
       end
 
       def column_number
-        @scanner.string[0..@pos].split("\n").last.length
+        @column_number
+      end
+
+      def update_position(new_pos)
+        while @tracked_pos < new_pos
+          byte = @string.getbyte(@tracked_pos)
+          if byte == 10
+            @line_number += 1
+            @column_number = 1
+          elsif byte < 128 || byte >= 192
+            @column_number += 1
+          end
+          @tracked_pos += 1
+        end
       end
 
       def raise_parse_error(message, line = line_number, col = column_number)

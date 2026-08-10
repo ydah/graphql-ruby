@@ -11,4 +11,13 @@ describe GraphQL::Language::Lexer do
     end
     assert_equal expected_err_message, err.message
   end
+
+  it "counts multibyte characters in columns" do
+    err = assert_raises(GraphQL::ParseError) do
+      subject.tokenize('{ field(arg: "日本語", other: -foo) }')
+    end
+
+    assert_equal 1, err.line
+    assert_equal 28, err.col
+  end
 end
