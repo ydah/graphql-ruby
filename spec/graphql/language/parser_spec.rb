@@ -4,6 +4,12 @@ require "spec_helper"
 describe GraphQL::Language::Parser do
   subject { GraphQL }
 
+  it "parses byte order marks between tokens without counting them towards max_tokens" do
+    query = "\uFEFF{\uFEFFfield\uFEFF}\uFEFF"
+    document = subject.parse(query, max_tokens: 3)
+    assert_equal "field", document.definitions.first.selections.first.name
+  end
+
   it "returns an error on bad UTF-8" do
     err = assert_raises GraphQL::ParseError do
       subject.parse("{ foo(query: \"\xBF\") }")
